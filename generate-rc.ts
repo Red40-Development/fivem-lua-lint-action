@@ -1,4 +1,4 @@
-import fetch from "node-fetch"
+import * as crypto from "crypto"
 import * as fs from "fs"
 import * as path from "path"
 import * as ansi from "ansi-colors"
@@ -25,6 +25,15 @@ interface CfxNative {
 
 type CfxNativesResponse = {
   [group: string]: { [native: string]: CfxNative }
+}
+
+interface PolledSource {
+  url: string
+  sha256: string
+}
+
+interface GenerationSnapshot {
+  sources: PolledSource[]
 }
 
 const macroCaseToSnake = (s: string): string => {
@@ -83,69 +92,111 @@ async function fetchAllNatives(): Promise<MappedNativeResponse> {
 
   for (const url of urls) {
     console.log(ansi.cyan(`fetch => ${ansi.blueBright(url)}...`))
-    await fetch(url)
-      .then<CfxNativesResponse>(r => r.json())
-      .then(data => {
-        const nativesList: CfxNative[] = Object.entries(data)
-          .reduce((natives: CfxNative[], [_, list]) => {
-            natives.push(...Object.values(list))
-            return natives
-          }, [])
+    const response = await fetch(url)
+    const body = await response.text()
+    const data = JSON.parse(body) as CfxNativesResponse
 
-        clientNatives.push(
-          ...nativesList
-            .filter(n => !n.apiset || n.apiset === "client")
-            .reduce(reduceNativesToNames, [])
-        )
-        serverNatives.push(
-          ...nativesList
-            .filter(n => n.apiset === "server")
-            .reduce(reduceNativesToNames, [])
-        )
-        sharedNatives.push(
-          ...nativesList
-            .filter(n => n.apiset === "shared")
-            .reduce(reduceNativesToNames, [])
-        )
-      })
+    const nativesList: CfxNative[] = Object.entries(data).reduce(
+      (natives: CfxNative[], [_, list]) => {
+        natives.push(...Object.values(list))
+        return natives
+      },
+      []
+    )
+
+    clientNatives.push(
+      ...nativesList
+        .filter(n => !n.apiset || n.apiset === "client")
+        .reduce(reduceNativesToNames, [])
+    )
+    serverNatives.push(
+      ...nativesList
+        .filter(n => n.apiset === "server")
+        .reduce(reduceNativesToNames, [])
+    )
+    sharedNatives.push(
+      ...nativesList
+        .filter(n => n.apiset === "shared")
+        .reduce(reduceNativesToNames, [])
+    )
+
+    polledSources.push({
+      url,
+      sha256: crypto.createHash("sha256").update(body).digest("hex")
+    })
   }
 
   return {
-    shared: uniqueArray(sharedNatives),
-    client: uniqueArray(clientNatives),
-    server: uniqueArray(serverNatives)
+    shared: uniqueArray(sharedNatives).sort(),
+    client: uniqueArray(clientNatives).sort(),
+    server: uniqueArray(serverNatives).sort()
+  }
+}
+
+const polledSources: PolledSource[] = []
+
+const writeFileIfChanged = (filePath: string, content: string): boolean => {
+  if (fs.existsSync(filePath)) {
+    const current = fs.readFileSync(filePath, "utf-8")
+    if (current === content) {
+      return false
+    }
+  }
+
+  fs.writeFileSync(filePath, content)
+  return true
+}
+
+const readSnapshot = (snapshotPath: string): GenerationSnapshot | null => {
+  if (!fs.existsSync(snapshotPath)) {
+    return null
+  }
+
+  try {
+    const raw = fs.readFileSync(snapshotPath, "utf-8")
+    return JSON.parse(raw) as GenerationSnapshot
+  } catch {
+    return null
   }
 }
 
 fetchAllNatives().then(natives => {
-  let template = fs.readFileSync(
+  const snapshotPath = path.join(__dirname, ".natives-snapshot.json")
+  const previousSnapshot = readSnapshot(snapshotPath)
+  const nextSnapshot: GenerationSnapshot = {
+    sources: polledSources
+  }
+
+  const sourcesChanged =
+    JSON.stringify(previousSnapshot?.sources || []) !==
+    JSON.stringify(nextSnapshot.sources)
+
+  const baseTemplate = fs.readFileSync(
     path.join(__dirname, ".luacheckrc.template"),
     "utf-8"
   )
-  template = template
+  const generatedTemplate = baseTemplate
     .replace("%%SHARED_GLOBALS%%", natives.shared.map(s => `'${s}'`).join(", "))
     .replace("%%SERVER_GLOBALS%%", natives.server.map(s => `'${s}'`).join(", "))
     .replace("%%CLIENT_GLOBALS%%", natives.client.map(s => `'${s}'`).join(", "))
 
-  let extraLibs = ""
-  const extraLibUserArg = process.argv[2]
-  if (extraLibUserArg?.length) {
-    extraLibs = `+${extraLibUserArg}`
+  const defaultOutput = generatedTemplate.replace(/%%EXTRA%%/g, "")
+  const defaultPath = path.join(__dirname, ".luacheckrc.default")
+  const extraTemplatePath = path.join(__dirname, ".luacheckrc.generated.template")
+
+  if (!sourcesChanged) {
+    const repairedDefault = writeFileIfChanged(defaultPath, defaultOutput)
+    const repairedTemplate = writeFileIfChanged(extraTemplatePath, generatedTemplate)
+    if (!repairedDefault && !repairedTemplate) {
+      console.log(ansi.gray("========[ NO SOURCE CHANGES ]========"))
+      return
+    }
   }
 
-  if (extraLibs.length) {
-    console.log(
-      ansi.gray(
-        `${ansi.yellow(`extra`)} ${ansi.cyan(`=>`)} ${ansi.magentaBright(
-          extraLibs
-        )}`
-      )
-    )
-  }
+  writeFileIfChanged(defaultPath, defaultOutput)
+  writeFileIfChanged(extraTemplatePath, generatedTemplate)
+  writeFileIfChanged(snapshotPath, `${JSON.stringify(nextSnapshot, null, 2)}\n`)
 
-  template = template.replace(/%%EXTRA%%/g, extraLibs)
-
-  fs.writeFileSync(path.join(__dirname, ".luacheckrc.default"), template)
   console.log(ansi.gray(`=`.repeat(29)))
   console.log(
     ansi.gray(

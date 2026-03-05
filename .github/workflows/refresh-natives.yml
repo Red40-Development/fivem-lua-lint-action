@@ -1,0 +1,48 @@
+name: Refresh FiveM Natives
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-natives:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate latest natives
+        run: pnpm build
+
+      - name: Commit changes
+        run: |
+          if git diff --quiet -- .luacheckrc.default .luacheckrc.generated.template .natives-snapshot.json; then
+            echo "No changes detected"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .luacheckrc.default .luacheckrc.generated.template .natives-snapshot.json
+          git commit -m "chore: refresh fivem native definitions"
+          git push

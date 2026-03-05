@@ -1,0 +1,12 @@
+{
+  "sources": [
+    {
+      "url": "https://runtime.fivem.net/doc/natives_cfx.json",
+      "sha256": "2eeb0ea1f1bcda38a3e249978a12e27b5a6059ba1710995b2b44f6f64b2d653d"
+    },
+    {
+      "url": "https://runtime.fivem.net/doc/natives.json",
+      "sha256": "169c1c91b5f7b17d83309678b9b8603e7e4c50c0e4e6d39fbcb225ac18a4f16a"
+    }
+  ]
+}

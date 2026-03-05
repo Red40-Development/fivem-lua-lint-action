@@ -7,8 +7,7 @@
   },
   "license": "MIT",
   "scripts": {
-    "install": "tsc -b",
-    "build": "node ./generate-rc.js",
+    "build": "ts-node ./generate-rc.ts",
     "format": "prettier --write ."
   },
   "devDependencies": {
@@ -17,9 +16,7 @@
   },
   "dependencies": {
     "typescript": "^4.3.2",
-    "@types/node": "^15.9.0",
-    "@types/node-fetch": "^2.5.10",
-    "ansi-colors": "^4.1.1",
-    "node-fetch": "^2.6.1"
+    "@types/node": "^24.0.0",
+    "ansi-colors": "^4.1.1"
   }
 }

@@ -29,7 +29,5 @@ jobs:
         with:
           args: |
             /bin/sh -c " \
-            apk add nodejs yarn && yarn && \
-            node -r ts-node/register ./generate-rc.ts && \
             luarocks install luacheck && \
             luacheck --config /github/workspace/.luacheckrc.default -t /github/workspace/tests"
