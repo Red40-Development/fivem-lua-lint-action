@@ -28,7 +28,7 @@ inputs:
     default: "false"
 runs:
   using: "docker"
-  image: "docker://ghcr.io/Red40-Development/fivem-lua-lint:latest"
+  image: "docker://ghcr.io/red40-development/fivem-lua-lint-action:latest"
   args:
     - ${{ inputs.args }}
     - ${{ inputs.paths }}
