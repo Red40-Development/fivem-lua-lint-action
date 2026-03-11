@@ -1,12 +1,24 @@
 #!/bin/sh -l
 CONFIG_PATH=$3
-LUACHECK_ARGS="--default-config $CONFIG_PATH $1"
 LUACHECK_PATH="$2"
 LUACHECK_CAPTURE_OUTFILE="$GITHUB_WORKSPACE/$4"
 LUACHECK_EXIT_ON_WARN="$5"
 EXTRA_LIBS="$6"
 
-# extra luacheck definitions (without runtime Node/Yarn)
+if [ -z "$CONFIG_PATH" ]; then
+  CONFIG_PATH="/luacheck-fivem/.luacheckrc.default"
+elif [ "${CONFIG_PATH#/}" = "$CONFIG_PATH" ]; then
+  CONFIG_PATH="$GITHUB_WORKSPACE/$CONFIG_PATH"
+fi
+
+if [ ! -f "$CONFIG_PATH" ]; then
+  echo "ERROR: config file not found: $CONFIG_PATH" >&2
+  exit 1
+fi
+
+LUACHECK_ARGS="--default-config $CONFIG_PATH $1"
+
+# extra luacheck definitions
 if [ -n "$EXTRA_LIBS" ]; then
   GENERATED_TEMPLATE_PATH="/luacheck-fivem/.luacheckrc.generated.template"
   if [ -f "$GENERATED_TEMPLATE_PATH" ]; then

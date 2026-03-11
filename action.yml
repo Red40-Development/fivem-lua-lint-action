@@ -11,9 +11,9 @@ inputs:
     required: false
     default: "."
   config_path:
-    description: "Config file path"
+    description: "Config file path (absolute, or relative to workspace root). Leave empty to use embedded default config"
     required: false
-    default: /luacheck-fivem/.luacheckrc.default
+    default: ""
   capture:
     description: "capture output into a file"
     required: false
@@ -28,7 +28,7 @@ inputs:
     default: "false"
 runs:
   using: "docker"
-  image: "Dockerfile"
+  image: "docker://ghcr.io/Red40-Development/fivem-lua-lint:latest"
   args:
     - ${{ inputs.args }}
     - ${{ inputs.paths }}

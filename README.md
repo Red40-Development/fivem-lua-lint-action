@@ -27,6 +27,32 @@ jobs:
 
 This will automatically run `luacheck` for both commits and pull requests!
 
+### Runtime Inputs
+
+You can customize behavior per-run without rebuilding the action image:
+
+- `paths`: Which files/folders to lint.
+- `args`: Extra `luacheck` args.
+- `config_path`: Optional custom config file. If omitted, the embedded default config is used.
+- `extra_libs`: Extra standards suffixes (format: `a+b+c`) injected at runtime.
+
+Example with custom path/config/extras:
+
+```yml
+name: Lint
+on: [push, pull_request]
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint
+        uses: Red40-Development/fivem-lua-lint-action@v3
+        with:
+          paths: "client/ server/"
+          extra_libs: "ox_lib+qbox"
+```
+
 ---
 
 ## JUnit Reporting (Getting Fancy)
@@ -48,7 +74,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Lint
-        uses: iLLeniumStudios/fivem-lua-lint-action@v2
+        uses: Red40-Development/fivem-lua-lint-action@v3
         with:
           capture: "junit.xml"
           args: "-t --formatter JUnit"

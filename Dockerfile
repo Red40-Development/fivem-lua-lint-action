@@ -1,4 +1,4 @@
-FROM ghcr.io/illeniumstudios/luacheck:v1.1.1-fivem-lua-v1.3.1
+FROM ghcr.io/red40-development/luacheck:latest
 
 RUN mkdir -p /luacheck-fivem
 ADD . /luacheck-fivem/
