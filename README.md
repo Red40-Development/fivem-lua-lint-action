@@ -20,9 +20,9 @@ jobs:
     name: Lint Resource
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Lint
-        uses: iLLeniumStudios/fivem-lua-lint-action@v2
+        uses: Red40-Development/fivem-lua-lint-action@v3
 ```
 
 This will automatically run `luacheck` for both commits and pull requests!
