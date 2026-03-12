@@ -1,7 +1,5 @@
 **/*
 !.docker
-!package.json
-!yarn.lock
-!generate-rc.ts
-!tsconfig.json
+!.luacheckrc.default
+!.luacheckrc.generated.template
 !.luacheckrc.template
