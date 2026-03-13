@@ -5,6 +5,10 @@ LUACHECK_CAPTURE_OUTFILE="$GITHUB_WORKSPACE/$4"
 LUACHECK_EXIT_ON_WARN="$5"
 EXTRA_LIBS="$6"
 
+if [ -z "$GITHUB_WORKSPACE" ]; then
+  GITHUB_WORKSPACE=$(pwd)
+fi
+
 if [ -z "$CONFIG_PATH" ]; then
   CONFIG_PATH="/luacheck-fivem/.luacheckrc.default"
 elif [ "${CONFIG_PATH#/}" = "$CONFIG_PATH" ]; then
@@ -32,24 +36,32 @@ fi
 
 EXIT_CODE=0
 
-echo "Args => 1: $1, 2: $2, 3: $3, 4: $4, 5: $5, 6: $6, 7: $7"
-
 cd $GITHUB_WORKSPACE
+if [ "$RUNNER_DEBUG" = "true" ]; then
+  echo "Args => 1: $1, 2: $2, 3: $3, 4: $4, 5: $5, 6: $6, 7: $7"
+  echo "outfile => $LUACHECK_CAPTURE_OUTFILE"
+fi
 
-echo "outfile => $LUACHECK_CAPTURE_OUTFILE"
+
 
 if [ -n "$4" ]; then
-  echo "exec => luacheck $LUACHECK_ARGS $LUACHECK_PATH 2>>$LUACHECK_CAPTURE_OUTFILE"
-  luacheck --operators "+=" $LUACHECK_ARGS $LUACHECK_PATH >$LUACHECK_CAPTURE_OUTFILE 2>&1 || true
+  if [ "$RUNNER_DEBUG" = "true" ]; then
+    echo "exec => luacheck $LUACHECK_ARGS $LUACHECK_PATH 2>>$LUACHECK_CAPTURE_OUTFILE"
+    echo "exec => luacheck $LUACHECK_ARGS --formatter default $LUACHECK_PATH"
+  fi
 
-  echo "exec => luacheck $LUACHECK_ARGS --formatter default $LUACHECK_PATH"
+  luacheck --operators "+=" $LUACHECK_ARGS $LUACHECK_PATH >$LUACHECK_CAPTURE_OUTFILE 2>&1 || true
   luacheck --operators "+=" $LUACHECK_ARGS --formatter default $LUACHECK_PATH || EXIT_CODE=$?
 else
-  echo "exec => luacheck $LUACHECK_ARGS $LUACHECK_PATH"
+  if [ "$RUNNER_DEBUG" = "true" ]; then
+    echo "exec => luacheck $LUACHECK_ARGS $LUACHECK_PATH"
+  fi
   luacheck --operators "+=" $LUACHECK_ARGS $LUACHECK_PATH || EXIT_CODE=$?
 fi
 
-echo "exit => $EXIT_CODE"
+if [ "$RUNNER_DEBUG" = "true" ]; then
+  echo "exit => $EXIT_CODE"
+fi
 if [ "$LUACHECK_EXIT_ON_WARN" = true ]; then
   exit $EXIT_CODE
 elif [ $EXIT_CODE -ge 2 ]; then

@@ -53,6 +53,53 @@ jobs:
           extra_libs: "ox_lib+qbox"
 ```
 
+## Running Locally with Docker
+
+You can run this action image locally against a resource folder to validate lint behavior before pushing.
+
+### 1) Build or use a local image
+
+If you are developing this repository locally:
+
+```sh
+docker build -t ghcr.io/red40-development/fivem-lua-lint-action .
+```
+
+### 2) Run lint (no extra libs)
+
+```sh
+docker run --rm \
+  -v "$PWD:/work" \
+  -w /work \
+  ghcr.io/red40-development/fivem-lua-lint-action \
+  "-t" "." "" "" "false" ""
+```
+
+### 3) Run lint with extra libs
+
+```sh
+docker run --rm \
+  -v "$PWD:/work" \
+  -w /work \
+  ghcr.io/red40-development/fivem-lua-lint-action \
+  "-t" "." "" "" "false" "ox_lib+qbox"
+```
+
+The positional arguments map to action inputs in this order:
+
+1. `args`
+2. `paths`
+3. `config_path`
+4. `capture`
+5. `fail_on_warnings`
+6. `extra_libs`
+
+Notes:
+
+- Leave `config_path` empty (`""`) to use the embedded default config.
+- Use `extra_libs` in the format `a+b+c` (example: `ox_lib+mysql+qbox`).
+- Set `fail_on_warnings` to `true` if you want non-zero exit on lint warnings.
+
 ---
 
 ## JUnit Reporting (Getting Fancy)
