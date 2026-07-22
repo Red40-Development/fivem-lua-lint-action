@@ -86,8 +86,8 @@ async function fetchAllNatives(): Promise<MappedNativeResponse> {
   const serverNatives: string[] = []
   const sharedNatives: string[] = []
   const urls = [
-    "https://static.fivem.net/doc/natives_cfx.json",
-    "https://static.fivem.net/doc/natives.json"
+    "https://static.cfx.re/doc/natives_cfx.json",
+    "https://static.cfx.re/doc/natives.json"
   ]
 
   for (const url of urls) {
